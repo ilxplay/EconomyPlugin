@@ -66,7 +66,7 @@ public class LeaderboardManager implements CommandExecutor {
             gui.setItem(i, playerHead);
         }
 
-        // Add event listener to prevent inventory modifications and interactions
+        //prevent inventory interactions
         Bukkit.getPluginManager().registerEvents(new InventoryListener(player), plugin);
 
         player.openInventory(gui);
@@ -79,10 +79,10 @@ public class LeaderboardManager implements CommandExecutor {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
 
-        // Set player name and texture
+        // set texture
         meta.setOwningPlayer(Bukkit.getOfflinePlayer(entry.playerUUID));
 
-        // Detailed lore
+
         List<String> lore = new ArrayList<>();
         lore.add("§7Balance: §6$" + String.format("%.2f", entry.currentBalance));
         lore.add("§724h Change: " +
@@ -113,7 +113,7 @@ public class LeaderboardManager implements CommandExecutor {
                 .collect(Collectors.toList());
     }
 
-    // Inner class to hold leaderboard entry details
+
     private static class LeaderboardEntry {
         UUID playerUUID;
         String playerName;
@@ -126,7 +126,7 @@ public class LeaderboardManager implements CommandExecutor {
             this.playerName = Bukkit.getOfflinePlayer(uuid).getName();
             this.currentBalance = balance;
             this.percentageChange = change;
-            this.rank = 0; // Will be set during sorting
+            this.rank = 0;
         }
     }
 
