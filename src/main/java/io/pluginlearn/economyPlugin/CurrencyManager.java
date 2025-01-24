@@ -171,7 +171,7 @@ public class CurrencyManager implements CommandExecutor {
 
 
     private void sendLeaderboard(CommandSender sender) {
-        // Get top players sorted by current balance
+        // top players sorted by current balance
         List<Map.Entry<String, Double>> topPlayers = balanceConfig.getKeys(false).stream()
                 .filter(key -> !key.equals("version")) // Exclude non-player entries
                 .map(key -> {
@@ -183,15 +183,15 @@ public class CurrencyManager implements CommandExecutor {
                 .limit(10)
                 .collect(Collectors.toList());
 
-        // Send leaderboard header
+
         sender.sendMessage("§6--- §eCurrency Leaderboard §6---");
 
-        // Display each player's stats
+        //player's stats
         for (int i = 0; i < topPlayers.size(); i++) {
             Map.Entry<String, Double> entry = topPlayers.get(i);
             UUID uuid = Bukkit.getOfflinePlayer(entry.getKey()).getUniqueId();
 
-            // Calculate percentage change
+            //percentage change
             BalanceEntry balanceEntry = balanceHistory.getOrDefault(uuid,
                     new BalanceEntry(entry.getValue()));
 
@@ -199,7 +199,7 @@ public class CurrencyManager implements CommandExecutor {
                     ((entry.getValue() - balanceEntry.previousBalance) / balanceEntry.previousBalance * 100) :
                     0;
 
-            // Format leaderboard message
+            // formatting
             String changeIndicator = percentageChange > 0 ? "§a▲" :
                     percentageChange < 0 ? "§c▼" : "§7-";
 

@@ -15,7 +15,7 @@ public class EconomyPlugin extends JavaPlugin {
         currencyManager = new CurrencyManager(this);
         LeaderboardManager leaderboardManager = new LeaderboardManager(this, currencyManager);
 
-        // Register commands
+
         Objects.requireNonNull(getCommand("balance")).setExecutor(currencyManager);
         Objects.requireNonNull(getCommand("addcurrency")).setExecutor(currencyManager);
 
@@ -43,7 +43,7 @@ public class EconomyPlugin extends JavaPlugin {
         currencyManager = new CurrencyManager(this);
         TransactionManager transactionManager = new TransactionManager(this, currencyManager);
 
-        // Register commands
+
         getCommand("pay").setExecutor(transactionManager);
         getCommand("leaderboard").setExecutor(leaderboardManager);
 
@@ -51,13 +51,13 @@ public class EconomyPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Ensure any final saving occurs
+
         if (currencyManager != null) {
             currencyManager.saveBalances();
         }
     }
 
-    // Optional: Provide access to currency manager from other parts of the plugin
+
     public CurrencyManager getCurrencyManager() {
         return currencyManager;
     }
