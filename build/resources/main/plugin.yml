@@ -1,0 +1,27 @@
+name: EconomyPlugin
+version: '1.0-SNAPSHOT'
+main: io.pluginlearn.economyPlugin.EconomyPlugin
+api-version: '1.21'
+authors: [ ilxplay ]
+
+commands:
+
+  balance:
+    description: Check your current balance
+    usage: /balance
+    aliases: [bal mbal]
+  addcurrency:
+    description: Add currency to a player
+    usage: /addcurrency <player> <amount>
+    permission: currency.admin
+  permissions:
+    currency.admin:
+    description: Allows adding currency to players
+    default: op
+  leaderboard:
+    description: View top players by balance
+    aliases: [ lb ]
+    usage: /leaderboard
+  pay:
+    description: Send money to another player
+    usage: /pay <player> <amount>
