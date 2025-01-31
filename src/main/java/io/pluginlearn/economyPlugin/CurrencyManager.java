@@ -1,19 +1,22 @@
 package io.pluginlearn.economyPlugin;
 
+import io.pluginlearn.economyPlugin.LeaderboardGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class CurrencyManager implements CommandExecutor {
     private final EconomyPlugin plugin;
@@ -23,9 +26,13 @@ public class CurrencyManager implements CommandExecutor {
 
     public CurrencyManager(EconomyPlugin plugin) {
         this.plugin = plugin;
+        this.balanceFile = new File(plugin.getDataFolder(), "balances.yml");
+        this.balanceConfig = YamlConfiguration.loadConfiguration(balanceFile);
         setupBalanceFile();
         startBalanceTracker();
     }
+
+
 
 
     private void setupBalanceFile() {
@@ -116,20 +123,16 @@ public class CurrencyManager implements CommandExecutor {
     }
 
     public double getBalance(UUID playerUUID) {
-        return balanceConfig.getDouble(playerUUID.toString(), 0.0);
-    }
-
-    public void addBalance(UUID playerUUID, double amount) {
-        double currentBalance = getBalance(playerUUID);
-        balanceConfig.set(playerUUID.toString(), currentBalance + amount);
-        saveBalances();
+        ConfigurationSection playerSection = balanceConfig.getConfigurationSection(playerUUID.toString());
+        return playerSection != null ? playerSection.getDouble("balance", 0.0) : 0.0;
     }
 
     public void saveBalances() {
         try {
             balanceConfig.save(balanceFile);
+            plugin.getLogger().info("Balances saved successfully to " + balanceFile.getPath());
         } catch (IOException e) {
-            plugin.getLogger().severe("Could not save balances.yml!");
+            plugin.getLogger().severe("Could not save balances.yml: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -170,57 +173,66 @@ public class CurrencyManager implements CommandExecutor {
     }
 
 
+
     private void sendLeaderboard(CommandSender sender) {
-        // top players sorted by current balance
-        List<Map.Entry<String, Double>> topPlayers = balanceConfig.getKeys(false).stream()
-                .filter(key -> !key.equals("version")) // Exclude non-player entries
-                .map(key -> {
-                    String playerName = Bukkit.getOfflinePlayer(UUID.fromString(key)).getName();
-                    double balance = balanceConfig.getDouble(key, 0.0);
-                    return new AbstractMap.SimpleEntry<>(playerName, balance);
-                })
-                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                .limit(10)
-                .collect(Collectors.toList());
-
-
-        sender.sendMessage("§6--- §eCurrency Leaderboard §6---");
-
-        //player's stats
-        for (int i = 0; i < topPlayers.size(); i++) {
-            Map.Entry<String, Double> entry = topPlayers.get(i);
-            UUID uuid = Bukkit.getOfflinePlayer(entry.getKey()).getUniqueId();
-
-            //percentage change
-            BalanceEntry balanceEntry = balanceHistory.getOrDefault(uuid,
-                    new BalanceEntry(entry.getValue()));
-
-            double percentageChange = balanceEntry.previousBalance > 0 ?
-                    ((entry.getValue() - balanceEntry.previousBalance) / balanceEntry.previousBalance * 100) :
-                    0;
-
-            // formatting
-            String changeIndicator = percentageChange > 0 ? "§a▲" :
-                    percentageChange < 0 ? "§c▼" : "§7-";
-
-            sender.sendMessage(String.format("§e%d. §f%s §7- §6$%.2f §8%s %.2f%%",
-                    i + 1,
-                    entry.getKey(),
-                    entry.getValue(),
-                    changeIndicator,
-                    Math.abs(percentageChange)
-            ));
+        if (sender instanceof Player) {
+            Player player = (Player) sender;
+            // Instead of trying to create a new GUI instance, use an existing one
+            plugin.getLeaderboardGUI().openLeaderboard(player, 1);  // Use the openLeaderboard method instead of createInventory
+        } else {
+            sender.sendMessage("§cThis command can only be used by players.");
         }
     }
 
-    public List<Map.Entry<UUID, Double>> getAllBalances() {
-        return balanceConfig.getKeys(false).stream()
-                .filter(key -> !key.equals("version"))
-                .map(key -> new AbstractMap.SimpleEntry<>(
-                        UUID.fromString(key),
-                        balanceConfig.getDouble(key, 0.0)
-                ))
-                .collect(Collectors.toList());
+    public void updateLeaderboard(Inventory openInventory) {
+        plugin.getLeaderboardGUI().updateLeaderboard(openInventory, 1);  // Use the existing updateLeaderboard method
+    }
+
+
+    public void addBalance(UUID playerUUID, double amount) {
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
+        String playerName = player.getName();
+
+        ConfigurationSection playerSection = balanceConfig.getConfigurationSection(playerUUID.toString());
+        if (playerSection == null) {
+            playerSection = balanceConfig.createSection(playerUUID.toString());
+        }
+
+        double currentBalance = playerSection.getDouble("balance", 0.0);
+        playerSection.set("balance", currentBalance + amount);
+        playerSection.set("name", playerName);
+
+        saveBalances(); // Save changes to file
+
+        // Refresh leaderboard
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                Inventory openInventory = online.getOpenInventory().getTopInventory();
+
+                /*
+                if (event.getView().getTitle().equals("Leaderboard")) {
+                    this.updateLeaderboard(openInventory);
+                    online.updateInventory();
+                }
+
+                 */
+            }
+        });
+    }
+
+
+    public Map<UUID, Double> getAllBalances() {
+        Map<UUID, Double> balances = new HashMap<>();
+        for (String key : balanceConfig.getKeys(false)) {
+            try {
+                UUID playerUUID = UUID.fromString(key);
+                double balance = balanceConfig.getDouble(key + ".balance", 0.0);
+                balances.put(playerUUID, balance);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid UUID in balances.yml: " + key);
+            }
+        }
+        return balances;
     }
 
     public double calculateBalanceChange(UUID playerUUID) {

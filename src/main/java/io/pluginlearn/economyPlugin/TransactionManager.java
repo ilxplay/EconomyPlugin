@@ -40,6 +40,31 @@ public class TransactionManager implements CommandExecutor {
         transactionLogConfig = YamlConfiguration.loadConfiguration(transactionLogFile);
     }
 
+
+    public boolean processTransaction(Player sender, Player recipient, double amount) {
+        // Check sender's balance
+        double senderBalance = currencyManager.getBalance(sender.getUniqueId());
+        if (senderBalance < amount) {
+            sender.sendMessage("§cInsufficient balance.");
+            return false;
+        }
+
+        // Deduct from sender
+        currencyManager.addBalance(sender.getUniqueId(), -amount);
+
+        // Add to recipient
+        currencyManager.addBalance(recipient.getUniqueId(), amount);
+
+        // Log transaction
+        logTransaction(sender.getUniqueId(), recipient.getUniqueId(), amount);
+
+        // Send confirmation messages
+        sender.sendMessage("§aSent §6" + amount + " §ato §e" + recipient.getName());
+        recipient.sendMessage("§aReceived §6" + amount + " §afrom §e" + sender.getName());
+
+        return true;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -50,20 +75,20 @@ public class TransactionManager implements CommandExecutor {
         Player player = (Player) sender;
 
         if (cmd.getName().equalsIgnoreCase("pay")) {
-
+            // Validate command usage
             if (args.length != 2) {
                 player.sendMessage("§cUsage: /pay <player> <amount>");
                 return true;
             }
 
-
+            // Find target player
             Player target = Bukkit.getPlayer(args[0]);
             if (target == null) {
                 player.sendMessage("§cPlayer not found or offline.");
                 return true;
             }
 
-
+            // Parse amount
             double amount;
             try {
                 amount = Double.parseDouble(args[1]);
@@ -76,29 +101,15 @@ public class TransactionManager implements CommandExecutor {
                 return true;
             }
 
-
-            double senderBalance = currencyManager.getBalance(player.getUniqueId());
-            if (senderBalance < amount) {
-                player.sendMessage("§cInsufficient balance.");
-                return true;
-            }
-
-
-            currencyManager.addBalance(player.getUniqueId(), -amount);
-            currencyManager.addBalance(target.getUniqueId(), amount);
-
-
-            logTransaction(player.getUniqueId(), target.getUniqueId(), amount);
-
-
-            player.sendMessage("§aSent §6" + amount + " §ato §e" + target.getName());
-            target.sendMessage("§aReceived §6" + amount + " §afrom §e" + player.getName());
-
+            // Process transaction
+            processTransaction(player, target, amount);
             return true;
         }
 
         return false;
     }
+
+
 
     private void logTransaction(UUID sender, UUID recipient, double amount) {
         String senderName = Bukkit.getOfflinePlayer(sender).getName();

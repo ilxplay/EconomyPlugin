@@ -4,6 +4,10 @@ main: io.pluginlearn.economyPlugin.EconomyPlugin
 api-version: '1.21'
 authors: [ ilxplay ]
 
+
+economy:
+  starting-balance: 100.0
+  currency-name: "Coins"
 commands:
 
   balance:
