@@ -29,3 +29,9 @@ commands:
   pay:
     description: Send money to another player
     usage: /pay <player> <amount>
+  list:
+    description: List an item for sale
+    usage: /list <item name> <amount>
+  shop:
+    description: Open the trading GUI
+    usage: /shop

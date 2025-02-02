@@ -33,10 +33,10 @@ public class TradeSystem implements Listener {
     }
 
     public void onEnable() {
-        // Register commands
+
         plugin.getCommand("list").setExecutor(new ListCommand());
         plugin.getCommand("shop").setExecutor(new ShopCommand());
-        // Register events
+
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
     public class ListedItem {
@@ -95,16 +95,13 @@ public class TradeSystem implements Listener {
 
             ItemStack itemToList = new ItemStack(material, amount);
 
-            // Check if player has the items
             if (!player.getInventory().containsAtLeast(itemToList, amount)) {
                 player.sendMessage(ChatColor.RED + "You don't have enough items!");
                 return true;
             }
 
-            // Remove items from player's inventory
             player.getInventory().removeItem(itemToList);
 
-            // Add to listed items
             ListedItem listedItem = new ListedItem(player.getName(), itemToList, amount);
             listedItems.computeIfAbsent(player.getName(), k -> new ArrayList<>()).add(listedItem);
 
@@ -129,7 +126,7 @@ public class TradeSystem implements Listener {
 
     private void openShopGUI(Player player) {
         int size = (listedItems.values().stream().mapToInt(List::size).sum() + 8) / 9 * 9;
-        size = Math.min(54, Math.max(9, size)); // Ensure size is between 9 and 54
+        size = Math.min(54, Math.max(9, size));
         Inventory gui = Bukkit.createInventory(null, size, GUI_TITLE);
 
         for (List<ListedItem> items : listedItems.values()) {
@@ -169,17 +166,17 @@ public class TradeSystem implements Listener {
             List<String> lore = meta.getLore();
             String sellerName = lore.get(0).replace(ChatColor.YELLOW + "Seller: ", "");
 
-            // Find the listed item
+
             List<ListedItem> sellerItems = listedItems.get(sellerName);
             if (sellerItems != null) {
                 for (ListedItem listedItem : sellerItems) {
                     if (listedItem.getAmount() == clickedItem.getAmount() &&
                             listedItem.getItem().getType() == clickedItem.getType()) {
 
-                        // Give item to buyer
+
                         player.getInventory().addItem(listedItem.getItem().clone());
 
-                        // Remove from listed items
+
                         sellerItems.remove(listedItem);
                         if (sellerItems.isEmpty()) {
                             listedItems.remove(sellerName);
@@ -188,7 +185,7 @@ public class TradeSystem implements Listener {
                         player.sendMessage(ChatColor.GREEN + "Successfully purchased items!");
                         player.closeInventory();
 
-                        // Notify seller if online
+
                         Player seller = Bukkit.getPlayer(sellerName);
                         if (seller != null) {
                             seller.sendMessage(ChatColor.GREEN + player.getName() + " purchased your " +
