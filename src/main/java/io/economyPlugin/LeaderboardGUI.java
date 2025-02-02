@@ -1,4 +1,4 @@
-package io.pluginlearn.economyPlugin;
+package io.economyPlugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -15,7 +15,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class LeaderboardGUI implements Listener {
     private EconomyPlugin plugin;

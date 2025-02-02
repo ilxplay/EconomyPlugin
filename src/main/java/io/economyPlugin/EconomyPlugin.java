@@ -1,9 +1,6 @@
-package io.pluginlearn.economyPlugin;
+package io.economyPlugin;
 
-import io.pluginlearn.economyPlugin.CurrencyManager;
-import io.pluginlearn.economyPlugin.LeaderboardGUI;
-import io.pluginlearn.economyPlugin.LeaderboardManager;
-import io.pluginlearn.economyPlugin.TransactionManager;
+import io.economyPlugin.tradeSystem.TradeSystem;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -18,7 +15,7 @@ public class EconomyPlugin extends JavaPlugin {
     private CurrencyManager currencyManager;
     private TransactionManager transactionManager;
     private LeaderboardGUI leaderboardGUI;
-
+    private TradeSystem tradeSystem;
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -45,6 +42,8 @@ public class EconomyPlugin extends JavaPlugin {
             }
             return true;
         });
+        tradeSystem = new TradeSystem(this); // Initialize the trade system
+        tradeSystem.onEnable();
 
         getServer().getPluginManager().registerEvents(leaderboardGUI, this);
 

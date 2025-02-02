@@ -1,4 +1,4 @@
-package io.pluginlearn.economyPlugin;
+package io.economyPlugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;

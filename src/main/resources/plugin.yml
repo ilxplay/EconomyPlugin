@@ -1,6 +1,6 @@
 name: EconomyPlugin
 version: '1.0-SNAPSHOT'
-main: io.pluginlearn.economyPlugin.EconomyPlugin
+main: io.economyPlugin.EconomyPlugin
 api-version: '1.21'
 authors: [ ilxplay ]
 
