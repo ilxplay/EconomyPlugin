@@ -19,16 +19,23 @@ import java.util.*;
 public class LeaderboardGUI implements Listener {
     private EconomyPlugin plugin;
     private CurrencyManager currencyManager;
+    private LeaderboardManager leaderboardManager;
     private Inventory inventory;
 
     public LeaderboardGUI(EconomyPlugin plugin) {
         this.plugin = plugin;
         this.currencyManager = plugin.getCurrencyManager();
+        this.leaderboardManager = plugin.getLeaderboardManager();
+
         this.inventory = createInventory();
     }
 
     public void setCurrencyManager(CurrencyManager currencyManager) {
         this.currencyManager = currencyManager;
+    }
+
+    public void setLeaderboardManager(LeaderboardManager leaderboardManager) {
+        this.leaderboardManager = leaderboardManager;
     }
 
     Inventory createInventory() {
@@ -42,10 +49,7 @@ public class LeaderboardGUI implements Listener {
     }
 
     public void updateLeaderboard(Inventory inv, int page) {
-        Map<UUID, Double> balances = currencyManager.getAllBalances();
-        List<Map.Entry<UUID, Double>> sortedBalances = balances.entrySet().stream()
-                .sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
-                .toList();
+        List<Map.Entry<UUID, Double>> sortedBalances = leaderboardManager.getSortedLeaderboard();
 
         int startIndex = (page - 1) * 45;
         int endIndex = Math.min(startIndex + 45, sortedBalances.size());
@@ -55,14 +59,24 @@ public class LeaderboardGUI implements Listener {
         int slot = 0;
         for (int i = startIndex; i < endIndex; i++) {
             Map.Entry<UUID, Double> entry = sortedBalances.get(i);
-            OfflinePlayer player = Bukkit.getOfflinePlayer(entry.getKey());
+            UUID playerUUID = entry.getKey();
+            OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
             double balance = entry.getValue();
+            double percentChange = leaderboardManager.getPercentageChange(playerUUID);
 
             ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
             if (skull.getItemMeta() instanceof SkullMeta skullMeta) {
                 skullMeta.setOwningPlayer(player);
                 skullMeta.setDisplayName("§e" + player.getName());
-                skullMeta.setLore(List.of("§aBalance: §6$" + balance));
+
+                List<String> lore = new ArrayList<>();
+                lore.add("§aBalance: §6$" + String.format("%.2f", balance));
+
+
+                String changeColor = percentChange >= 0 ? "§a+" : "§c";
+                lore.add("§f24h Change: " + changeColor + String.format("%.2f", percentChange) + "%");
+
+                skullMeta.setLore(lore);
                 skull.setItemMeta(skullMeta);
             }
 
@@ -89,18 +103,28 @@ public class LeaderboardGUI implements Listener {
             ItemStack clickedItem = event.getCurrentItem();
             if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
 
-            String displayName = clickedItem.getItemMeta().getDisplayName();
-            int currentPage = getPage(event.getInventory());
-            if (displayName.equals(ChatColor.YELLOW + "Previous Page")) {
-                openLeaderboard(player, currentPage - 1);
-            } else if (displayName.equals(ChatColor.YELLOW + "Next Page")) {
-                openLeaderboard(player, currentPage + 1);
+            if (clickedItem.hasItemMeta() && clickedItem.getItemMeta().hasDisplayName()) {
+                String displayName = clickedItem.getItemMeta().getDisplayName();
+                int currentPage = getPage(event.getInventory());
+                if (displayName.equals(ChatColor.YELLOW + "Previous Page")) {
+                    openLeaderboard(player, currentPage - 1);
+                } else if (displayName.equals(ChatColor.YELLOW + "Next Page")) {
+                    openLeaderboard(player, currentPage + 1);
+                }
             }
         }
     }
 
     private int getPage(Inventory inventory) {
-        return 1; // Needs proper implementation for tracking pages
+        for (int i = 0; i < inventory.getViewers().size(); i++) {
+            HumanEntity viewer = inventory.getViewers().get(i);
+            if (viewer instanceof Player) {
+                if (((Player) viewer).hasMetadata("leaderboard_page")) {
+                    return ((Player) viewer).getMetadata("leaderboard_page").get(0).asInt();
+                }
+            }
+        }
+        return 1; //to pg 1
     }
 
     public void open(Player player) {
@@ -119,5 +143,9 @@ public class LeaderboardGUI implements Listener {
 
     public CurrencyManager getCurrencyManager() {
         return currencyManager;
+    }
+
+    public LeaderboardManager getLeaderboardManager() {
+        return leaderboardManager;
     }
 }

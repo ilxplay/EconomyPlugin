@@ -15,7 +15,9 @@ public class EconomyPlugin extends JavaPlugin {
     private CurrencyManager currencyManager;
     private TransactionManager transactionManager;
     private LeaderboardGUI leaderboardGUI;
+    private LeaderboardManager leaderboardManager;
     private TradeSystem tradeSystem;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -25,32 +27,31 @@ public class EconomyPlugin extends JavaPlugin {
         balanceFile = new File(getDataFolder(), "balances.yml");
         balanceConfig = YamlConfiguration.loadConfiguration(balanceFile);
 
-        // Initialize managers
         currencyManager = new CurrencyManager(this);
-        leaderboardGUI = new LeaderboardGUI(this);
-        // Pass 'this' directly
-        leaderboardGUI.setCurrencyManager(currencyManager);
-        transactionManager = new TransactionManager(this, currencyManager);
 
         FileConfiguration balances = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "balances.yml"));
-        LeaderboardManager leaderboardManager = new LeaderboardManager(balances);
+        leaderboardManager = new LeaderboardManager(this, balances);
 
-        // Register commands and events
+        leaderboardGUI = new LeaderboardGUI(this);
+        leaderboardGUI.setCurrencyManager(currencyManager);
+        leaderboardGUI.setLeaderboardManager(leaderboardManager);
+
+        transactionManager = new TransactionManager(this, currencyManager);
+
         getCommand("leaderboard").setExecutor((sender, command, label, args) -> {
             if (sender instanceof Player player) {
                 leaderboardGUI.openLeaderboard(player, 1);
             }
             return true;
         });
-        tradeSystem = new TradeSystem(this); // Initialize the trade system
+
+        tradeSystem = new TradeSystem(this);
         tradeSystem.onEnable();
 
         getServer().getPluginManager().registerEvents(leaderboardGUI, this);
 
-        // Periodic snapshot update
-        getServer().getScheduler().runTaskTimer(this, leaderboardManager::updateSnapshot, 20L * 60, 20L * 60);
+        getServer().getScheduler().runTaskTimer(this, leaderboardManager::updateSnapshot, 20L * 60, 20L * 60 * 60);
 
-        // Register commands
         try {
             Objects.requireNonNull(getCommand("balance")).setExecutor(currencyManager);
             Objects.requireNonNull(getCommand("addcurrency")).setExecutor(currencyManager);
@@ -74,6 +75,10 @@ public class EconomyPlugin extends JavaPlugin {
 
     public CurrencyManager getCurrencyManager() {
         return currencyManager;
+    }
+
+    public LeaderboardManager getLeaderboardManager() {
+        return leaderboardManager;
     }
 
     @Override
