@@ -93,3 +93,6 @@ public class EconomyPlugin extends JavaPlugin {
         }
     }
 }
+
+
+// Illia Reznikov (c) (aka. ilxplay) all rights reserved
