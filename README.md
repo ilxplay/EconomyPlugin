@@ -1,2 +1,3 @@
 # EconomyPlugin
  
+[deprecated]
